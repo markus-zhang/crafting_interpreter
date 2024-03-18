@@ -1,0 +1,11 @@
+a > b
+a > = b
+print("I think it is a good interpreter");
+print(" This is a multiple
+        line
+                string
+             "
+   );
+a / b
+a / = b
+a // This is a comment
