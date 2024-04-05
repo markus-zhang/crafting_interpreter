@@ -66,9 +66,18 @@ public class Lox {
         report(lineNumber, column, line, "", message);
     }
 
+    static void error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, token.column, "", "at end", message);
+        }
+        else {
+            report(token.line, token.column, "", " at '" + token.lexeme + "'", message);
+        }
+    }
+
     private static void report(int lineNumber, int column, String line, String where, String message) {
         System.err.println(
-                "[line " + line + "] Error" + where + ": " + message
+                "[line " + lineNumber + "] Error" + where + ": " + message
         );
         System.err.println(line);
         printCaret(column);
