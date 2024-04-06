@@ -31,6 +31,17 @@ public class Parser {
         this.tokens = tokens;
     }
 
+    Expr parse() {
+        try {
+            // expression is top level
+            return expression();
+        }
+        catch(ParseError error) {
+            // Instead of crashing or hanging, simply return nothing
+            return null;
+        }
+    }
+
     private Expr expression() {
         return equality();
     }
@@ -119,7 +130,8 @@ public class Parser {
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
-        return null;
+        // If nothing matches then it's an error
+        throw error(peek(), "Expect expression.");
     }
 
     private Token consume(TokenType type, String message) {
@@ -134,6 +146,33 @@ public class Parser {
     private ParseError error(Token token, String message) {
         Lox.error(token, message);
         return new ParseError();
+    }
+
+    private void synchronize() {
+        /*
+            When synchronizing the parser (after encountering a non-panicking parsing error, we simply find the Token that follows the next semicolon -- that is, perhaps the beginning of the next statement.
+
+            We used "perhaps" as this function is not aware of whether the parser is inside, say, a for loop. In this case, the next statement is not the one after the next semicolon.
+        */
+        advance();
+        while (!isAtEnd()) {
+            if (previous().type == SEMICOLON) {
+                return;
+            }
+
+            switch(peek().type) {
+                // Valid statements
+                case CLASS:
+                case FOR:
+                case FUN:
+                case IF:
+                case PRINT:
+                case RETURN:
+                case VAR:
+                case WHILE:
+                    return;
+            }
+        }
     }
 
     private boolean match(TokenType... types) {
