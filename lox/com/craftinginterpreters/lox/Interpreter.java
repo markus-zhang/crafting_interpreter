@@ -17,7 +17,7 @@ class Interpreter implements Expr.Visitor<Object> {
     public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right);
         if (expr.operator.type == MINUS) {
-            // Then we know it's a number
+            checkNumberOperand(expr.operator, right);
             return -(double)right;
         }
         else if (expr.operator.type == BANG) {
@@ -40,20 +40,28 @@ class Interpreter implements Expr.Visitor<Object> {
                 else if (left instanceof String && right instanceof String) {
                     return (String) left + (String) right;
                 }
-                break;
+                // If it reaches here then the types are wrong
+                throw new RuntimeError(expr.operator, "Both operands must be numbers or Strings");
             case MINUS:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left - (double)right;
             case STAR:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left * (double)right;
             case SLASH:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left / (double)right;
             case GREATER:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left > (double)right;
             case GREATER_EQUAL:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left >= (double)right;
             case LESS:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left < (double) right;
             case LESS_EQUAL:
+                checkNumberOperands(expr.operator, left, right);
                 return (double)left <= (double) right;
             case EQUAL_EQUAL:
                 return isEqual(left, right);
@@ -97,5 +105,29 @@ class Interpreter implements Expr.Visitor<Object> {
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    private void checkNumberOperand(Token operator, Object operand) {
+        /**
+         * Check whether the object is a number
+         */
+        if (operand instanceof Double) {
+            return;
+        }
+        else {
+            throw new RuntimeError(operator, "Operand must be a number.");
+        }
+    }
+
+    private void checkNumberOperands(Token operator, Object left, Object right) {
+        /**
+         * Check whether both left and right objects are numbers
+         */
+        if (left instanceof Double && right instanceof Double) {
+            return;
+        }
+        else {
+            throw new RuntimeError(operator, "Operands must be numbers.");
+        }
     }
 }
