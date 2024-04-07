@@ -10,7 +10,9 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -32,6 +34,10 @@ public class Lox {
         // If error then exit
         if (hadError) {
             System.exit(65);
+        }
+        // If runtime error then exit
+        if (hadRuntimeError) {
+            System.exit(70);
         }
     }
 
@@ -59,15 +65,25 @@ public class Lox {
         Parser parser = new Parser(tokens);
         Expr expression = parser.parse();
 
-        if (hadError)   return;
-
+        if (hadError) {
+            return;
+        }
         System.out.println(new AstPrinter().print(expression));
+
+        interpreter.interpret(expression);
+
+        if (hadRuntimeError) {
+            return;
+        }
     }
 
     static void error(int lineNumber, int column, String line, String message) {
         report(lineNumber, column, line, "", message);
     }
 
+    /**
+     *  We put all error reporting code in Lox, whether it is from the scanner or the parser or the interpreter.
+     */
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
             report(token.line, token.column, "", "at end", message);
@@ -75,6 +91,16 @@ public class Lox {
         else {
             report(token.line, token.column, "", " at '" + token.lexeme + "'", message);
         }
+    }
+
+    static void runtimeError(RuntimeError error) {
+        /**
+         * interpret() in the Interpreter class catches a RuntimeError, but we deal it in the Lox class
+         */
+        System.err.println(error.getMessage());
+        System.err.println("[line " + error.token.line + "]");
+        System.err.println("[column " + error.token.column + "]");
+        hadRuntimeError = true;
     }
 
     private static void report(int lineNumber, int column, String line, String where, String message) {
