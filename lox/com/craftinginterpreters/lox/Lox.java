@@ -54,6 +54,7 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        System.out.println("Tokenizer completes its running.");
 
         Parser parser = new Parser(tokens);
         Expr expression = parser.parse();
