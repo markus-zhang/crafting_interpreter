@@ -55,11 +55,12 @@ public class Lox {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
 
-        // For now just print all tokens
-        System.out.println("line:column type        lexeme      literal");
-        for (Token token : tokens) {
-            System.out.println(token);
-        }
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
+
+        if (hadError)   return;
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
     static void error(int lineNumber, int column, String line, String message) {
