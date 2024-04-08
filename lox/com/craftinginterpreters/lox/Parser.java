@@ -23,11 +23,13 @@ import static com.craftinginterpreters.lox.TokenType.*;
     primary         -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")";
 */
 public class Parser {
+    private final String source;
     private static class ParseError extends RuntimeException {}
     private final List<Token> tokens;
     private int current = 0;
 
-    Parser(List<Token> tokens) {
+    Parser(List<Token> tokens, String source) {
+        this.source = source;
         this.tokens = tokens;
     }
 
@@ -49,7 +51,7 @@ public class Parser {
     private Expr equality() {
         // equality        -> comparison ("==" comparison)* ;
         // equality        -> comparison ("!=" comparison)* ;
-        // ! Lox does NOT allow chained equalities (as Java, which evaulates 5 <= 6 == 6 as ERROR instead of true
+        // ! Lox does NOT allow chained equalities (as Java, which evaluates 5 <= 6 == 6 as ERROR instead of true
         Expr expr = comparison();
         while (match(BANG_EQUAL, EQUAL_EQUAL)) {
             Token operator = previous();
@@ -144,7 +146,9 @@ public class Parser {
     }
 
     private ParseError error(Token token, String message) {
-        Lox.error(token, message);
+        // Lox.error(token, message);
+        String line = source.split("\n")[token.line];
+        Lox.error(token.line, token.column, line, message);
         return new ParseError();
     }
 
