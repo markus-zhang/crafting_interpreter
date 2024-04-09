@@ -1,5 +1,6 @@
 package com.craftinginterpreters.lox;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -7,6 +8,11 @@ import static com.craftinginterpreters.lox.TokenType.*;
 /*
     Grammar:
 
+    program         -> statement* EOF ;
+    statement       -> exprStmt ;
+                    -> printStmt ;
+    exprStmt        -> expression ";" ;
+    printStmt       -> "print" expression ";" ;
     expression      -> equality ;
     equality        -> comparison ("==" comparison)* ;
     equality        -> comparison ("!=" comparison)* ;
@@ -33,15 +39,19 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            // expression is top level
-            return expression();
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(statement());
         }
-        catch(ParseError error) {
-            // Instead of crashing or hanging, simply return nothing
-            return null;
+        return statements;
+    }
+
+    private Stmt statement() {
+        if (match(PRINT)) {
+            return printStatement();
         }
+        return expressionStatement();
     }
 
     private Expr expression() {
