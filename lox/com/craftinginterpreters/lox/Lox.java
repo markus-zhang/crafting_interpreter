@@ -13,6 +13,7 @@ public class Lox {
     private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
+    private static String sourceCode = "";
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -58,11 +59,12 @@ public class Lox {
     }
 
     private static void run(String source) {
+        sourceCode = source;
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         System.out.println("Tokenizer completes its running.");
 
-        Parser parser = new Parser(tokens);
+        Parser parser = new Parser(tokens, sourceCode);
         Expr expression = parser.parse();
 
         if (hadError) {

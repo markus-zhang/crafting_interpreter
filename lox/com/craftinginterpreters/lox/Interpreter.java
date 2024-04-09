@@ -49,6 +49,10 @@ class Interpreter implements Expr.Visitor<Object> {
                 else if (left instanceof String && right instanceof String) {
                     return (String) left + (String) right;
                 }
+                // Challenge 7.2, p109
+                else if (left instanceof String || right instanceof String) {
+                    return left.toString() + right.toString();
+                }
                 // If it reaches here then the types are wrong
                 throw new RuntimeError(expr.operator, "Both operands must be numbers or Strings");
             case MINUS:
