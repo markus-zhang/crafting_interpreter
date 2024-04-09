@@ -2,7 +2,8 @@ package com.craftinginterpreters.lox;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
-class Interpreter implements Expr.Visitor<Object> {
+class Interpreter implements    Expr.Visitor<Object>,
+                                Stmt.Visitor<Void>  {
     /**
      * We need to implement the visitXExpr functions;
      * Each function returns a Java Object as Lox is dynamically typed,
@@ -36,6 +37,7 @@ class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
 
+    @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
@@ -85,6 +87,20 @@ class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
 
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression expressionStmt) {
+        evaluate(expressionStmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print printStmt) {
+        Object value = evaluate(printStmt.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
     }
