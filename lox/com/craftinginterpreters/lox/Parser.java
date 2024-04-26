@@ -8,6 +8,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
 /*
     Grammar:
 
+    // See note 00 for declaration
     program         -> declaration* EOF ;
     declaration     -> varDecl;
                     -> statement;

@@ -5,6 +5,8 @@ import static com.craftinginterpreters.lox.TokenType.*;
 
 class Interpreter implements    Expr.Visitor<Object>,
                                 Stmt.Visitor<Void>  {
+    // Adding an environment for IDENTIFIERs
+    private Environment environment = new Environment();
     /**
      * We need to implement the visitXExpr functions;
      * Each function returns a Java Object as Lox is dynamically typed,
@@ -87,6 +89,24 @@ class Interpreter implements    Expr.Visitor<Object>,
         }
         // Next line should not be reachable
         return null;
+    }
+
+    // This one is for variable declaration (var a = "blah";)
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        // If user did not initialize its value, it's set to nil
+        Object value = null;
+        if (stmt.initializer != null) {
+            value = evaluate(stmt.initializer);
+        }
+        environment.define(stmt.name.lexeme, value);
+        return null;
+    }
+
+    // This one is for variable expression (print(a);)
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.get(expr.name);
     }
 
     @Override
