@@ -221,7 +221,9 @@ public class Parser {
     }
 
     private boolean isAtEnd() {
-        return current >= tokens.size();
+        // I'm using a slightly different index from the one used in the book,
+        // thus I need to subtract size() by 1, otherwise it causes issues with EOF
+        return current >= tokens.size() - 1;
     }
 
     private Token peek() {
