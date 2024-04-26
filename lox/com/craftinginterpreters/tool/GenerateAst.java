@@ -24,8 +24,8 @@ public class GenerateAst {
         );
 
         defineAst(outputDir, "Stmt", Arrays.asList(
-                "Expression : Expr expression",
-                "Print      : Expr expression"
+            "Expression : Expr expression",
+            "Print      : Expr expression"
         ));
     }
 
