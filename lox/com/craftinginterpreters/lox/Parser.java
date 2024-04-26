@@ -46,9 +46,22 @@ public class Parser {
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            statements.add(declaration());
         }
         return statements;
+    }
+
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) {
+                return varDeclaration();
+            }
+            return statement();
+        // We put exception catching and synchronization in the top level
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
     }
 
     private Stmt statement() {
@@ -56,6 +69,16 @@ public class Parser {
             return printStatement();
         }
         return expressionStatement();
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect a variable name.");
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after a variable declaration");
+        return new Stmt.Var(name, initializer);
     }
 
     private Stmt expressionStatement() {
@@ -157,6 +180,9 @@ public class Parser {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
+        }
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
         }
         // If nothing matches then it's an error
         throw error(peek(), "Expect expression.");
