@@ -1,4 +1,5 @@
 package com.craftinginterpreters.lox;
+import java.util.List;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -9,10 +10,11 @@ class Interpreter implements    Expr.Visitor<Object>,
      * Each function returns a Java Object as Lox is dynamically typed,
      * which means that a variable may be assigned to different Java types
      */
-    void interpret(Expr expression) {
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
@@ -134,6 +136,10 @@ class Interpreter implements    Expr.Visitor<Object>,
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
     }
 
     private void checkNumberOperand(Token operator, Object operand) {
