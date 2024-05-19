@@ -132,7 +132,7 @@ public class Parser {
                  * a + b  = 3;
                  * The LHS cannot be cast to a Token, thus would trigger an error
                  *
-                 * Right now, the only valid target is a simple variable expression, but we will add fields later.
+                 * Right now, the only valid target is a simple variable expression, but we will add fields later. You can use ChatGPT to confirm that actually none of the other types can be cast to an Expr.Variable, so it's kinda useless, but with more types added in the future this could be useful
                  */
                 Token name = ((Expr.Variable)expr).name;
                 return new Expr.Assign(name, value);
