@@ -18,7 +18,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
                     -> printStmt ;
     exprStmt        -> expression ";" ;
     printStmt       -> "print" expression ";" ;
-    expression      -> equality ;
+    expression      -> assignment ;
+    // assignment is the lowest expression thus it's at the top of expression
+    assignment      -> IDENTIFIER "=" assignment
+    assignment      -> equality
     equality        -> comparison ("==" comparison)* ;
     equality        -> comparison ("!=" comparison)* ;
     comparison      -> term ("<=" term)* ;
@@ -95,7 +98,49 @@ public class Parser {
     }
 
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Expr assignment() {
+        /**
+         * Consider the following lines:
+         * var a = 5
+         * a = 6
+         * At the second line, we do NOT necessarily evaluate a (which is 5 before the assignment).
+         * We only need to figure out where to store the value of 6.
+         * In this case (line 2), this is a l-value (evaluates to a storage location)
+         *
+         * We want the AST to relfect that an l-value isn't evaluated like a normal expression, thus the Expr.Assign node has a Token as the LHS instead of an Expr.
+         * The problem is the parser does not know it is parsing an l-value until it hits the =, which may occur many tokens later:
+         * makeList().head.next = node;
+         */
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            // Assignment is right-associative -> recursively call assignment() to parse the RHS
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                /**
+                 * This conversion (from Expr to Expr.Variable) works because every valid assignment target happens to also be valid syntax as a normal expression.
+                 * Consider this:
+                 * a = 3;
+                 * a definitely can be cast to a Token
+                 * a.b.c = 3;
+                 * a.b.c definitely can be cast to a Token
+                 * a + b  = 3;
+                 * The LHS cannot be cast to a Token, thus would trigger an error
+                 *
+                 * Right now, the only valid target is a simple variable expression, but we will add fields later.
+                 */
+                Token name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
+        }
+        return expr;
     }
 
     private Expr equality() {
