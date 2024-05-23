@@ -46,3 +46,13 @@ print a;
 var a = "too late!";
 ```
 I don't exactly know how the author is going to do this. Theoretically, if he scans ahead and saves the function names (they are also IDENTIFIERs) into the HashMap, what is preventing him from scanning ahead and saves the variable names as well? Maybe he distinguishes them in the code.
+
+### Note 01: Scope
+
+Rules that we want to follow:
+
+- Variables inside of a scope should be able to shadow the ones outside if they have the same names;
+- Variables declared inside of a scope should be removed once the program is out of the scope;
+- When the compiler tries to find the variable, it starts from the current scope and then search its enclosing ones, until it reaches the top one (global)
+
+The implementation is a tree. Each environment has a "pointer" pointing to its enclosing one.

@@ -4,7 +4,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 class Environment {
+    /** Each environment has a pointer pointing to its enclosing parent;
+     *  See note 01 for more details about "Scope";
+     *  The top environment (global) should have NULL as its "enclosing" member
+     */
+    final Environment enclosing;
     private final Map<String, Object> values = new HashMap<>();
+
+    Environment() {
+        enclosing = null;
+    }
+
+    Environment(Environment enclosing) {
+        this.enclosing = enclosing;
+    }
 
     void define(String name, Object value) {
         /**
@@ -19,8 +32,16 @@ class Environment {
     }
 
     Object get(Token name) {
+        /** We first try to find "name" in "self.values";
+         *  If we cannot locate it we move up to its enclosing environment;
+         *  Until we hit the global, then we report an error if we cannot locate it
+         */
         if (values.containsKey(name.lexeme)) {
             return values.get(name.lexeme);
+        }
+        // This is pretty clever. We avoid recursion by simplu calling the enclosing environment's get(). If the first if {} block does return something non-null, the program stops above and wouldn't reach here
+        if (enclosing != null) {
+            return enclosing.get(name);
         }
         // See note 01
         throw new RuntimeError(
@@ -36,6 +57,11 @@ class Environment {
          */
         if (values.containsKey(name.lexeme)) {
             values.put(name.lexeme, value);
+            // return is a MUST to avoid falling to the next statements
+            return;
+        }
+        if (enclosing != null) {
+            enclosing.assign(name, value);
             return;
         }
         throw new RuntimeError(
