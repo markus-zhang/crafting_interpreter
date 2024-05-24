@@ -1,4 +1,5 @@
 package com.craftinginterpreters.lox;
+import java.sql.Statement;
 import java.util.List;
 
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -170,6 +171,30 @@ class Interpreter implements    Expr.Visitor<Object>,
 
     private void execute(Stmt stmt) {
         stmt.accept(this);
+    }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    void executeBlock(List<Stmt> statements, Environment environment) {
+        /**
+         * Save current environment and then restore it at the end
+         */
+        Environment previousEnv = this.environment;
+
+        try {
+            this.environment = environment;
+
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        }
+        finally {
+            this.environment = previousEnv;
+        }
     }
 
     private void checkNumberOperand(Token operator, Object operand) {

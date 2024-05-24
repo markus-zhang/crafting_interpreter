@@ -16,8 +16,11 @@ import static com.craftinginterpreters.lox.TokenType.*;
     varDecl         -> "var" IDENTIFIER ("=" expression)? ";" ;
     statement       -> exprStmt ;
                     -> printStmt ;
+                    -> block;
     exprStmt        -> expression ";" ;
     printStmt       -> "print" expression ";" ;
+    // In block, we use declaration instead of statement as varDecl can also live in blocks
+    block           -> "{" (declaration)* "}"
     expression      -> assignment ;
     // assignment is the lowest expression thus it's at the top of expression
     assignment      -> IDENTIFIER "=" assignment
@@ -72,6 +75,9 @@ public class Parser {
         if (match(PRINT)) {
             return printStatement();
         }
+        else if (match(LEFT_BRACE)) {
+            return new Stmt.Block(block());
+        }
         return expressionStatement();
     }
 
@@ -95,6 +101,17 @@ public class Parser {
         Expr value = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expect ')' after block.");
+        return statements;
     }
 
     private Expr expression() {
@@ -287,6 +304,13 @@ public class Parser {
             }
         }
         return false;
+    }
+
+    private boolean check(TokenType type) {
+        if (isAtEnd()) {
+            return false;
+        }
+        return peek().type == type;
     }
 
     private Token advance() {
