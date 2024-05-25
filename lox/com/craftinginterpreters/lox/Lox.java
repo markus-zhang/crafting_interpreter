@@ -65,14 +65,14 @@ public class Lox {
         System.out.println("Tokenizer completes its running.");
 
         Parser parser = new Parser(tokens, sourceCode);
-        Expr expression = parser.parse();
+        List<Stmt> statements = parser.parse();
 
         if (hadError) {
             return;
         }
-        System.out.println(new AstPrinter().print(expression));
+        // System.out.println(new AstPrinter().print(expression));
 
-        interpreter.interpret(expression);
+        interpreter.interpret(statements);
 
         if (hadRuntimeError) {
             return;

@@ -1,17 +1,23 @@
 package com.craftinginterpreters.lox;
+import java.sql.Statement;
+import java.util.List;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
-class Interpreter implements Expr.Visitor<Object> {
+class Interpreter implements    Expr.Visitor<Object>,
+                                Stmt.Visitor<Void>  {
+    // Adding an environment for IDENTIFIERs
+    private Environment environment = new Environment();
     /**
      * We need to implement the visitXExpr functions;
      * Each function returns a Java Object as Lox is dynamically typed,
      * which means that a variable may be assigned to different Java types
      */
-    void interpret(Expr expression) {
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
@@ -36,6 +42,7 @@ class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
 
+    @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
@@ -85,6 +92,48 @@ class Interpreter implements Expr.Visitor<Object> {
         return null;
     }
 
+    // This one is for variable declaration (var a = "blah";)
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        // If user did not initialize its value, it's set to nil
+        Object value = null;
+        if (stmt.initializer != null) {
+            value = evaluate(stmt.initializer);
+        }
+        environment.define(stmt.name.lexeme, value);
+        return null;
+    }
+
+    // This one is for variable expression (print(a);)
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.get(expr.name);
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        /**
+         * Evaluate the RHS and assign the result to LHS
+         */
+        Object value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression expressionStmt) {
+        evaluate(expressionStmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print printStmt) {
+        Object value = evaluate(printStmt.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
         return evaluate(expr.expression);
     }
@@ -118,6 +167,34 @@ class Interpreter implements Expr.Visitor<Object> {
 
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
+    void executeBlock(List<Stmt> statements, Environment environment) {
+        /**
+         * Save current environment and then restore it at the end
+         */
+        Environment previousEnv = this.environment;
+
+        try {
+            this.environment = environment;
+
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        }
+        finally {
+            this.environment = previousEnv;
+        }
     }
 
     private void checkNumberOperand(Token operator, Object operand) {

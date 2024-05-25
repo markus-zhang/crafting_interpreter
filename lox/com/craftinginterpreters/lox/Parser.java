@@ -1,5 +1,6 @@
 package com.craftinginterpreters.lox;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -7,7 +8,23 @@ import static com.craftinginterpreters.lox.TokenType.*;
 /*
     Grammar:
 
-    expression      -> equality ;
+    // See note 00 for declaration
+    program         -> declaration* EOF ;
+    declaration     -> varDecl;
+                    -> statement;
+    [In varDecl, the ? means it's optional]
+    varDecl         -> "var" IDENTIFIER ("=" expression)? ";" ;
+    statement       -> exprStmt ;
+                    -> printStmt ;
+                    -> block;
+    exprStmt        -> expression ";" ;
+    printStmt       -> "print" expression ";" ;
+    // In block, we use declaration instead of statement as varDecl can also live in blocks
+    block           -> "{" (declaration)* "}"
+    expression      -> assignment ;
+    // assignment is the lowest expression thus it's at the top of expression
+    assignment      -> IDENTIFIER "=" assignment
+    assignment      -> equality
     equality        -> comparison ("==" comparison)* ;
     equality        -> comparison ("!=" comparison)* ;
     comparison      -> term ("<=" term)* ;
@@ -20,7 +37,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
     factor          -> unary ("/" unary)* ;
     unary           -> ("!" | "-") unary ;
     unary           -> primary;
-    primary         -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")";
+    primary         -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ") | IDENTIFIER";
 */
 public class Parser {
     private final String source;
@@ -33,19 +50,114 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            // expression is top level
-            return expression();
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(declaration());
         }
-        catch(ParseError error) {
-            // Instead of crashing or hanging, simply return nothing
+        return statements;
+    }
+
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) {
+                return varDeclaration();
+            }
+            return statement();
+        // We put exception catching and synchronization in the top level
+        } catch (ParseError error) {
+            synchronize();
             return null;
         }
     }
 
+    private Stmt statement() {
+        if (match(PRINT)) {
+            return printStatement();
+        }
+        else if (match(LEFT_BRACE)) {
+            return new Stmt.Block(block());
+        }
+        return expressionStatement();
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect a variable name.");
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after a variable declaration");
+        return new Stmt.Var(name, initializer);
+    }
+
+    private Stmt expressionStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Expression(value);
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(RIGHT_BRACE, "Expect ')' after block.");
+        return statements;
+    }
+
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Expr assignment() {
+        /**
+         * Consider the following lines:
+         * var a = 5
+         * a = 6
+         * At the second line, we do NOT necessarily evaluate a (which is 5 before the assignment).
+         * We only need to figure out where to store the value of 6.
+         * In this case (line 2), this is a l-value (evaluates to a storage location)
+         *
+         * We want the AST to relfect that an l-value isn't evaluated like a normal expression, thus the Expr.Assign node has a Token as the LHS instead of an Expr.
+         * The problem is the parser does not know it is parsing an l-value until it hits the =, which may occur many tokens later:
+         * makeList().head.next = node;
+         */
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            // Assignment is right-associative -> recursively call assignment() to parse the RHS
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                /**
+                 * This conversion (from Expr to Expr.Variable) works because every valid assignment target happens to also be valid syntax as a normal expression.
+                 * Consider this:
+                 * a = 3;
+                 * a definitely can be cast to a Token
+                 * a.b.c = 3;
+                 * a.b.c definitely can be cast to a Token
+                 * a + b  = 3;
+                 * The LHS cannot be cast to a Token, thus would trigger an error
+                 *
+                 * Right now, the only valid target is a simple variable expression, but we will add fields later. You can use ChatGPT to confirm that actually none of the other types can be cast to an Expr.Variable, so it's kinda useless, but with more types added in the future this could be useful
+                 */
+                Token name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
+        }
+        return expr;
     }
 
     private Expr equality() {
@@ -132,6 +244,9 @@ public class Parser {
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
         }
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
+        }
         // If nothing matches then it's an error
         throw error(peek(), "Expect expression.");
     }
@@ -191,6 +306,13 @@ public class Parser {
         return false;
     }
 
+    private boolean check(TokenType type) {
+        if (isAtEnd()) {
+            return false;
+        }
+        return peek().type == type;
+    }
+
     private Token advance() {
         if (!isAtEnd()) {
             current ++;
@@ -199,7 +321,9 @@ public class Parser {
     }
 
     private boolean isAtEnd() {
-        return current >= tokens.size();
+        // I'm using a slightly different index from the one used in the book,
+        // thus I need to subtract size() by 1, otherwise it causes issues with EOF
+        return current >= tokens.size() - 1;
     }
 
     private Token peek() {
