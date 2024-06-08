@@ -58,6 +58,17 @@ public class Parser {
         return statements;
     }
 
+    Expr parseExpression() {
+        try {
+            // expression is top level
+            return expression();
+        }
+        catch(ParseError error) {
+            // Instead of crashing or hanging, simply return nothing
+            return null;
+        }
+    }
+
     private Stmt declaration() {
         try {
             if (match(VAR)) {
