@@ -71,15 +71,15 @@ public class Lox {
         List<Token> tokens = scanner.scanTokens();
         System.out.println("Tokenizer completes its running.");
 
-        // If we are in REPL mode, we should notify the parser so that it can also parse expressions.
-        // Right now we only allow a single line of code in REPL as we use readLine()
-        // We need to switch to other reading methods if we want to allow very flexible REPL, such as detecting whether we should execute or simply move to next line when user clicks "Enter"
+        /** If we are in REPL mode, we should notify the parser so that it can also parse expressions.
+         Right now we only allow a single line of code in REPL as we use readLine()
+         We need to switch to other reading methods if we want to allow very flexible REPL, such as detecting whether we should execute or simply move to next line when user clicks "Enter"
+         */
 
         Parser parser = new Parser(tokens, sourceCode);
 
         if (!repl) {
             List<Stmt> statements = parser.parse();
-
 
             if (hadError) {
                 return;
@@ -88,9 +88,6 @@ public class Lox {
 
             interpreter.interpret(statements);
 
-            if (hadRuntimeError) {
-                return;
-            }
         }
         else {
             // REPL mode
@@ -103,9 +100,6 @@ public class Lox {
 
                 interpreter.interpret(statements);
 
-                if (hadRuntimeError) {
-                    return;
-                }
             }
             else {
                 Expr expr = parser.parseExpression();
@@ -116,10 +110,10 @@ public class Lox {
 
                 interpreter.interpret(expr);
 
-                if (hadRuntimeError) {
-                    return;
-                }
             }
+        }
+        if (hadRuntimeError) {
+            return;
         }
     }
 
