@@ -14,6 +14,7 @@ public class Lox {
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
     private static String sourceCode = "";
+    static boolean repl = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -21,9 +22,11 @@ public class Lox {
             System.exit(64);
         }
         else if (args.length == 1) {
+            repl = false;
             runFile(args[0]);
         }
         else {
+            repl = true;
             runPrompt();
         }
     }
@@ -46,8 +49,11 @@ public class Lox {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
 
+        // Display > at the end of loop so that errors don't FOLLOW the next >
+        // Instead errors should precede the next >
+        System.out.print("> ");
         for (;;) {
-            System.out.print("> ");
+            // System.out.print("> ");
             String line = reader.readLine();
             if (line == null) {
                 break;
@@ -55,6 +61,7 @@ public class Lox {
             run(line);
             // Reset hadError to prevent killing the REPL
             hadError = false;
+            System.out.print("> ");
         }
     }
 
@@ -64,16 +71,47 @@ public class Lox {
         List<Token> tokens = scanner.scanTokens();
         System.out.println("Tokenizer completes its running.");
 
+        /** If we are in REPL mode, we should notify the parser so that it can also parse expressions.
+         Right now we only allow a single line of code in REPL as we use readLine()
+         We need to switch to other reading methods if we want to allow very flexible REPL, such as detecting whether we should execute or simply move to next line when user clicks "Enter"
+         */
+
         Parser parser = new Parser(tokens, sourceCode);
-        List<Stmt> statements = parser.parse();
 
-        if (hadError) {
-            return;
+        if (!repl) {
+            List<Stmt> statements = parser.parse();
+
+            if (hadError) {
+                return;
+            }
+            // System.out.println(new AstPrinter().print(expression));
+
+            interpreter.interpret(statements);
+
         }
-        // System.out.println(new AstPrinter().print(expression));
+        else {
+            // REPL mode
+            if (tokens.get(tokens.size() - 2).lexeme.equals(";")) {
+                List<Stmt> statements = parser.parse();
 
-        interpreter.interpret(statements);
+                if (hadError) {
+                    return;
+                }
 
+                interpreter.interpret(statements);
+
+            }
+            else {
+                Expr expr = parser.parseExpression();
+
+                if (hadError) {
+                    return;
+                }
+
+                interpreter.interpret(expr);
+
+            }
+        }
         if (hadRuntimeError) {
             return;
         }
