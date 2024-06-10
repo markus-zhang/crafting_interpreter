@@ -26,7 +26,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
     expression      -> assignment ;
     // assignment is the lowest expression thus it's at the top of expression
     assignment      -> IDENTIFIER "=" assignment
-    assignment      -> equality
+    assignment      -> logical_or
+    logical_or      -> logical_and ("or" logical_and)*
+    logical_and     -> equality ("and" equality)*
     equality        -> comparison ("==" comparison)* ;
     equality        -> comparison ("!=" comparison)* ;
     comparison      -> term ("<=" term)* ;
@@ -154,20 +156,22 @@ public class Parser {
         return assignment();
     }
 
+    /**
+     * Consider the following lines:
+     * var a = 5
+     * a = 6
+     * At the second line, we do NOT necessarily evaluate a (which is 5 before the assignment).
+     * We only need to figure out where to store the value of 6.
+     * In this case (line 2), this is a l-value (evaluates to a storage location)
+     * ------------------------------------------------------------------------------
+     * We want the AST to reflect that an l-value isn't evaluated like a normal expression, thus the Expr.Assign node has a Token as the LHS instead of an Expr.
+     * The problem is the parser does not know it is parsing an l-value until it hits the =, which may occur many tokens later:
+     * makeList().head.next = node;
+     */
     private Expr assignment() {
-        /**
-         * Consider the following lines:
-         * var a = 5
-         * a = 6
-         * At the second line, we do NOT necessarily evaluate a (which is 5 before the assignment).
-         * We only need to figure out where to store the value of 6.
-         * In this case (line 2), this is a l-value (evaluates to a storage location)
-         *
-         * We want the AST to relfect that an l-value isn't evaluated like a normal expression, thus the Expr.Assign node has a Token as the LHS instead of an Expr.
-         * The problem is the parser does not know it is parsing an l-value until it hits the =, which may occur many tokens later:
-         * makeList().head.next = node;
-         */
-        Expr expr = equality();
+        // assignment      -> IDENTIFIER "=" assignment
+        // assignment      -> logical_or
+        Expr expr = logical_or();
 
         if (match(EQUAL)) {
             Token equals = previous();
@@ -175,7 +179,7 @@ public class Parser {
             Expr value = assignment();
 
             if (expr instanceof Expr.Variable) {
-                /**
+                /*
                  * This conversion (from Expr to Expr.Variable) works because every valid assignment target happens to also be valid syntax as a normal expression.
                  * Consider this:
                  * a = 3;
@@ -192,6 +196,28 @@ public class Parser {
             }
 
             error(equals, "Invalid assignment target.");
+        }
+        return expr;
+    }
+
+    private Expr logical_or() {
+        // logical_or      -> logical_and ("or" logical_and)*
+        Expr expr = logical_and();
+        while (match(OR)) {
+            Token operator = previous();
+            Expr right = logical_and();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+        return expr;
+    }
+
+    private Expr logical_and() {
+        // logical_and     -> equality ("and" equality)*
+        Expr expr = equality();
+        while (match(AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new Expr.Logical(expr, operator, right);
         }
         return expr;
     }

@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 import java.sql.Statement;
 import java.util.List;
+import java.lang.Boolean;
 
 import static com.craftinginterpreters.lox.TokenType.*;
 
@@ -120,14 +121,34 @@ class Interpreter implements    Expr.Visitor<Object>,
         return environment.get(expr.name);
     }
 
+    /**
+     * Evaluate the RHS and assign the result to LHS
+     */
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
-        /**
-         * Evaluate the RHS and assign the result to LHS
-         */
         Object value = evaluate(expr.value);
         environment.assign(expr.name, value);
         return value;
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        Object left_value = evaluate(expr.left);
+        boolean left_logical_value = isTruthy(left_value);
+        // Short-circuit
+        if (expr.operator.type == TokenType.OR) {
+            if (left_logical_value) {
+                return left_value;
+            }
+        }
+        else if (expr.operator.type == TokenType.AND) {
+            if (!left_logical_value) {
+                return left_value;
+            }
+        }
+        // If we cannot short-circuit, the previous value is of no concern to us.
+        // The result is determined by the right side
+        return evaluate(expr.right);
     }
 
     @Override
