@@ -137,6 +137,19 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     @Override
+    public Void visitIfStmt(Stmt.If ifStmt) {
+        if (isTruthy(evaluate(ifStmt.condition))) {
+            execute(ifStmt.thenBranch);
+        }
+        else {
+            if (ifStmt.elseBranch != null) {
+                execute(ifStmt.elseBranch);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print printStmt) {
         Object value = evaluate(printStmt.expression);
         System.out.println(stringify(value));

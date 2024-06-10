@@ -18,6 +18,8 @@ import static com.craftinginterpreters.lox.TokenType.*;
                     -> printStmt ;
                     -> block;
     exprStmt        -> expression ";" ;
+    ifStmt          -> "if" "(" expression ")" statement
+                       ("else" statement)?
     printStmt       -> "print" expression ";" ;
     // In block, we use declaration instead of statement as varDecl can also live in blocks
     block           -> "{" (declaration)* "}"
@@ -89,6 +91,9 @@ public class Parser {
         else if (match(LEFT_BRACE)) {
             return new Stmt.Block(block());
         }
+        else if (match(IF)) {
+            return ifStatement();
+        }
         return expressionStatement();
     }
 
@@ -106,6 +111,26 @@ public class Parser {
         Expr value = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Expression(value);
+    }
+
+    private Stmt ifStatement() {
+        // Recall that the node has 3 children:
+        // condition, thenBranch and elseBranch
+        consume(LEFT_PAREN, "Expect '(' after if.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after the condition expression.");
+
+        // We don't need to worry about block as statement is the parent of block.
+        // If the statement starts with LEFT_PAREN, then it automatically return new Stmt.Block(block());
+        // Recall that Block simply extends Stmt so it still matches the type of thenBranch or elseBranch
+        Stmt thenBranch = statement();;
+        Stmt elseBranch = null;
+
+        if (match(ELSE)) {
+            elseBranch = statement();
+        }
+
+        return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
     private Stmt printStatement() {
