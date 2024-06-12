@@ -25,10 +25,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
     block           -> "{" (declaration)* "}"
     expression      -> assignment ;
     // assignment is the lowest expression thus it's at the top of expression
-    assignment      -> IDENTIFIER "=" assignment
-    assignment      -> logical_or
-    logical_or      -> logical_and ("or" logical_and)*
-    logical_and     -> equality ("and" equality)*
+    assignment      -> IDENTIFIER "=" assignment ;
+    assignment      -> logical_or ;
+    logical_or      -> logical_and ("or" logical_and)* ;
+    logical_and     -> equality ("and" equality)* ;
     equality        -> comparison ("==" comparison)* ;
     equality        -> comparison ("!=" comparison)* ;
     comparison      -> term ("<=" term)* ;

@@ -1,0 +1,16 @@
+var a = 1000;
+
+var b = 500;
+
+if (a < 100 or b < 1000 ) {
+    print("a is smaller than 100 and b is smaller than 1,000");
+}
+if (a == 100 and b == 500) {
+    print("a is equal to 100 and b is equal to 500");
+}
+if (a == 1000 and b > 500) {
+    print("a is equal to 1000 and b is greater than 500");
+}
+if (a == 1000 or b < 100) {
+    print("a is 1000 and b is less than 100");
+}
