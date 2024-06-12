@@ -56,3 +56,29 @@ Rules that we want to follow:
 - When the compiler tries to find the variable, it starts from the current scope and then search its enclosing ones, until it reaches the top one (global)
 
 The implementation is a tree. Each environment has a "pointer" pointing to its enclosing one.
+
+### Note 02: Logical Operators
+
+**Short-circuit:**
+
+- Logical `and` is always `false` if any of the conditions is `false`;
+- Logical `or` is always `true` if any of the condition is `true`
+
+**Precedence:**
+
+Logical operators are of the lowest precedence in the operators. 
+They are still higher than the assignment expression though:
+
+```
+a = b and c
+```
+This would be weird if b is assigned to a first and then and with c, although the result is the same.
+
+Within the logical operators themselves, we decided to put logical_or as the lowest one.
+Thus in BNF assignment cascades to logical_or, which cascades to logical_and, which cascades to equality.
+
+**Evaluation**
+
+If we can short-circuit it by evaluating the left side, we should return the left side (Why? Why not return TRUE or FALSE?)
+
+If we cannot short-circuit it, the result is then determined by the right side, and the left side can be discarded.
