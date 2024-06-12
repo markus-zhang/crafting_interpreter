@@ -7,6 +7,9 @@ import static com.craftinginterpreters.lox.TokenType.*;
 
 class Interpreter implements    Expr.Visitor<Object>,
                                 Stmt.Visitor<Void>  {
+    private boolean breakSignal = false;
+    private boolean continueSignal = false;
+
     // Adding an environment for IDENTIFIERs
     private Environment environment = new Environment();
     /**
@@ -172,8 +175,18 @@ class Interpreter implements    Expr.Visitor<Object>,
 
     @Override
     public Void visitWhileStmt(Stmt.While whileStmt) {
+        // "break" should send a signal to all subsequent execute()
+        // and while loop should reset this signal on quit
+        // "continue" should send a signal to all subsequent execute()
+        // and reset within the while loop because continue just skips one loop
         while (isTruthy(evaluate(whileStmt.condition))) {
             execute(whileStmt.body);
+            if (continueSignal) {
+                continueSignal = false;
+            }
+        }
+        if (breakSignal) {
+            breakSignal = false;
         }
         return null;
     }

@@ -16,9 +16,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
     varDecl         -> "var" IDENTIFIER ("=" expression)? ";" ;
     statement       -> exprStmt ;
                     -> printStmt ;
-                    -> ifStmt;
-                    -> whileStmt;
-                    -> block;
+                    -> ifStmt ;
+                    -> whileStmt ;
+                    -> breakStmt ;
+                    -> block ;
     exprStmt        -> expression ";" ;
     ifStmt          -> "if" "(" expression ")" statement
                        ("else" statement)?
