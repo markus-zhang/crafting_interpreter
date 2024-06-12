@@ -16,10 +16,14 @@ import static com.craftinginterpreters.lox.TokenType.*;
     varDecl         -> "var" IDENTIFIER ("=" expression)? ";" ;
     statement       -> exprStmt ;
                     -> printStmt ;
-                    -> block;
+                    -> ifStmt ;
+                    -> whileStmt ;
+                    -> breakStmt ;
+                    -> block ;
     exprStmt        -> expression ";" ;
     ifStmt          -> "if" "(" expression ")" statement
                        ("else" statement)?
+    whileStmt       -> "while" "(" expression ")" statement
     printStmt       -> "print" expression ";" ;
     // In block, we use declaration instead of statement as varDecl can also live in blocks
     block           -> "{" (declaration)* "}"
@@ -96,6 +100,9 @@ public class Parser {
         else if (match(IF)) {
             return ifStatement();
         }
+        else if (match(WHILE)) {
+            return whileStatement();
+        }
         return expressionStatement();
     }
 
@@ -133,6 +140,20 @@ public class Parser {
         }
 
         return new Stmt.If(condition, thenBranch, elseBranch);
+    }
+
+    /**
+     * whileStmt       -> "while" "(" expression ")" statement
+     * @return: Stmt
+     */
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "Expect '(' after while.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after the condition expressions.");
+
+        Stmt body = statement();
+
+        return new Stmt.While(condition, body);
     }
 
     private Stmt printStatement() {
