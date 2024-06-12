@@ -171,6 +171,14 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     @Override
+    public Void visitWhileStmt(Stmt.While whileStmt) {
+        while (isTruthy(evaluate(whileStmt.condition))) {
+            execute(whileStmt.body);
+        }
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print printStmt) {
         Object value = evaluate(printStmt.expression);
         System.out.println(stringify(value));
