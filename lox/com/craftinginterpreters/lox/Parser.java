@@ -19,12 +19,15 @@ import static com.craftinginterpreters.lox.TokenType.*;
                     -> ifStmt ;
                     -> whileStmt ;
                     -> breakStmt ;
+                    -> continueStmt;
                     -> block ;
     exprStmt        -> expression ";" ;
     ifStmt          -> "if" "(" expression ")" statement
                        ("else" statement)?
     whileStmt       -> "while" "(" expression ")" statement
     printStmt       -> "print" expression ";" ;
+    breakStmt       -> "break" ";" ;
+    continueStmt    -> "continue" ";" ;
     // In block, we use declaration instead of statement as varDecl can also live in blocks
     block           -> "{" (declaration)* "}"
     expression      -> assignment ;
@@ -103,6 +106,12 @@ public class Parser {
         else if (match(WHILE)) {
             return whileStatement();
         }
+        else if (match(BREAK)) {
+            return breakStatement();
+        }
+        else if (match(CONTINUE)) {
+            return continueStatement();
+        }
         return expressionStatement();
     }
 
@@ -158,8 +167,18 @@ public class Parser {
 
     private Stmt printStatement() {
         Expr value = expression();
-        consume(SEMICOLON, "Expect ';' after value.");
+        consume(SEMICOLON, "Expect ';' after statement.");
         return new Stmt.Print(value);
+    }
+
+    private Stmt breakStatement() {
+        consume(SEMICOLON, "Expect ';' after statement.");
+        return new Stmt.Break(null);
+    }
+
+    private Stmt continueStatement() {
+        consume(SEMICOLON, "Expect ';' after statement.");
+        return new Stmt.Continue(null);
     }
 
     private List<Stmt> block() {

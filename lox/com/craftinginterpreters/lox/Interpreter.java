@@ -181,12 +181,13 @@ class Interpreter implements    Expr.Visitor<Object>,
         // and reset within the while loop because continue just skips one loop
         while (isTruthy(evaluate(whileStmt.condition))) {
             execute(whileStmt.body);
+            if (breakSignal) {
+                breakSignal = false;
+                break;
+            }
             if (continueSignal) {
                 continueSignal = false;
             }
-        }
-        if (breakSignal) {
-            breakSignal = false;
         }
         return null;
     }
@@ -195,6 +196,18 @@ class Interpreter implements    Expr.Visitor<Object>,
     public Void visitPrintStmt(Stmt.Print printStmt) {
         Object value = evaluate(printStmt.expression);
         System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitBreakStmt(Stmt.Break breakStmt) {
+        breakSignal = true;
+        return null;
+    }
+
+    @Override
+    public Void visitContinueStmt(Stmt.Continue continueStmt) {
+        continueSignal = true;
         return null;
     }
 
@@ -235,7 +248,10 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     private void execute(Stmt stmt) {
-        stmt.accept(this);
+        if ((!breakSignal) && (!continueSignal)) {
+            stmt.accept(this);
+        }
+        return;
     }
 
     @Override
