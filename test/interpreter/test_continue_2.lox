@@ -1,0 +1,20 @@
+var a = 0;
+var b = 0;
+
+while (a < 5) {
+  while (b < 5) {
+    if (b == 3) {
+      print "Continuing inner loop";
+      b = b + 1;
+      continue;
+    } else if (b == 4) {
+      print "Breaking inner loop";
+      break;
+    } else {
+      print "a: " + a + ", b: " + b;
+    }
+    b = b + 1;
+  }
+  a = a + 1;
+  b = 0; // Reset b for the next iteration of the outer loop
+}

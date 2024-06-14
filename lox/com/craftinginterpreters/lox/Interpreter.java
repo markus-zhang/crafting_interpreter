@@ -216,12 +216,12 @@ class Interpreter implements    Expr.Visitor<Object>,
         return evaluate(expr.expression);
     }
 
+    /**
+     * If it's null, return false;
+     * If it's boolean, return its own value;
+     * If it's everything else, it is recognized as true;
+     */
     private boolean isTruthy(Object object) {
-        /**
-         * If it's null, return false;
-         * If it's boolean, return its own value;
-         * If it's everything else, it is recognized as true;
-         */
         if (object == null) {
             return false;
         }
@@ -251,7 +251,6 @@ class Interpreter implements    Expr.Visitor<Object>,
         if ((!breakSignal) && (!continueSignal)) {
             stmt.accept(this);
         }
-        return;
     }
 
     @Override
@@ -260,10 +259,10 @@ class Interpreter implements    Expr.Visitor<Object>,
         return null;
     }
 
+    /**
+     * Save current environment and then restore it at the end
+     */
     void executeBlock(List<Stmt> statements, Environment environment) {
-        /**
-         * Save current environment and then restore it at the end
-         */
         Environment previousEnv = this.environment;
 
         try {
@@ -279,9 +278,7 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     private void checkNumberOperand(Token operator, Object operand) {
-        /**
-         * Check whether the object is a number
-         */
+        // Check whether the object is a number
         if (operand instanceof Double) {
             return;
         }
@@ -291,9 +288,7 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     private void checkNumberOperands(Token operator, Object left, Object right) {
-        /**
-         * Check whether both left and right objects are numbers
-         */
+        // Check whether both left and right objects are numbers
         if (left instanceof Double && right instanceof Double) {
             return;
         }
@@ -302,12 +297,12 @@ class Interpreter implements    Expr.Visitor<Object>,
         }
     }
 
+    /**
+     * If null      -> "nil";
+     * If numerical -> truncate to integer format if ended with ".0";
+     * Other cases  -> simply call toString()
+     */
     private String stringify(Object object) {
-        /**
-         * If null      -> "nil";
-         * If numerical -> truncate to integer format if ended with ".0";
-         * Other cases  -> simply call toString()
-         */
         if (object == null) {
             return "nil";
         }
