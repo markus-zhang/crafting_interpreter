@@ -18,6 +18,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
                     -> printStmt ;
                     -> ifStmt ;
                     -> whileStmt ;
+                    -> forStmt ;
                     -> breakStmt ;
                     -> continueStmt;
                     -> block ;
@@ -25,6 +26,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
     ifStmt          -> "if" "(" expression ")" statement
                        ("else" statement)?
     whileStmt       -> "while" "(" expression ")" statement
+    forStmt         -> "for" "(" (varDecl | assignment | ";")
+                       expression? ";"
+                       expression? ")"
+                       statement
     printStmt       -> "print" expression ";" ;
     breakStmt       -> "break" ";" ;
     continueStmt    -> "continue" ";" ;
@@ -106,6 +111,9 @@ public class Parser {
         else if (match(WHILE)) {
             return whileStatement();
         }
+        else if (match(FOR)) {
+            return forStatement();
+        }
         else if (match(BREAK)) {
             return breakStatement();
         }
@@ -163,6 +171,41 @@ public class Parser {
         Stmt body = statement();
 
         return new Stmt.While(condition, body);
+    }
+
+    /**
+     * forStmt         -> "for" "(" (varDecl | exprStmt | ";")
+     *                        expression? ";"
+     *                        expression? ")"
+     *                        statement
+     * @return
+     */
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after for.");
+        Stmt initializer;
+        Expr condition = null;
+        Expr increment = null;
+        Stmt body;
+        if (match(VAR)) {
+            initializer = varDeclaration();
+        }
+        else {
+            initializer = expressionStatement();
+        }
+
+        if (peek().type != RIGHT_PAREN) {
+            condition = expression();
+            consume(SEMICOLON, "Expect ';' after condition.");
+            if (peek().type != RIGHT_PAREN) {
+                increment = expression();
+            }
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' at the end of for loop.");
+
+        body = statement();
+
+        return null;
     }
 
     private Stmt printStatement() {
