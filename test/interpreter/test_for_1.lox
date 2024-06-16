@@ -1,0 +1,10 @@
+var a = 1;
+var b = 55;
+
+for (i = 0; a < b; i = i + 1) {
+    print(a);
+    a = a + 1;
+    if (a >= 5) break;
+}
+
+print(a);

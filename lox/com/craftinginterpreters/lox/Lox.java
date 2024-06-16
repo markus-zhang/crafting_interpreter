@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
-    private static final Interpreter interpreter = new Interpreter();
+    private static Interpreter interpreter = null;
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
     private static String sourceCode = "";
@@ -77,6 +77,7 @@ public class Lox {
          */
 
         Parser parser = new Parser(tokens, sourceCode);
+        interpreter = new Interpreter(sourceCode);
 
         if (!repl) {
             List<Stmt> statements = parser.parse();
@@ -97,6 +98,7 @@ public class Lox {
                 if (hadError) {
                     return;
                 }
+                System.out.println("Parser completes its running.");
 
                 interpreter.interpret(statements);
 
@@ -107,6 +109,7 @@ public class Lox {
                 if (hadError) {
                     return;
                 }
+                System.out.println("Parser completes its running.");
 
                 interpreter.interpret(expr);
 
@@ -133,13 +136,15 @@ public class Lox {
         }
     }
 
-    static void runtimeError(RuntimeError error) {
+    static void runtimeError(RuntimeError err) {
         /**
          * interpret() in the Interpreter class catches a RuntimeError, but we deal it in the Lox class
          */
-        System.err.println(error.getMessage());
-        System.err.println("[line " + error.token.line + "]");
-        System.err.println("[column " + error.token.column + "]");
+        String line = sourceCode.split("\n")[err.token.line];
+        // System.err.println(err.getMessage());
+        System.err.println("[line " + err.token.line + "]");
+        System.err.println("[column " + err.token.column + "]");
+        report(err.token.line, err.token.column, line, "", err.getMessage());
         hadRuntimeError = true;
     }
 

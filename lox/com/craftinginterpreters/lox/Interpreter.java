@@ -7,11 +7,17 @@ import static com.craftinginterpreters.lox.TokenType.*;
 
 class Interpreter implements    Expr.Visitor<Object>,
                                 Stmt.Visitor<Void>  {
+    private final String source;
+    // private static class InterpretError extends RuntimeException {}
     private boolean breakSignal = false;
     private boolean continueSignal = false;
 
     // Adding an environment for IDENTIFIERs
     private Environment environment = new Environment();
+
+    Interpreter(String source) {
+        this.source = source;
+    }
     /**
      * We need to implement the visitXExpr functions;
      * Each function returns a Java Object as Lox is dynamically typed,
@@ -193,6 +199,27 @@ class Interpreter implements    Expr.Visitor<Object>,
     }
 
     @Override
+    public Void visitForStmt(Stmt.For forStmt) {
+        if (forStmt.initializer != null) {
+            execute(forStmt.initializer);
+        }
+        while (forStmt.condition == null || isTruthy(evaluate(forStmt.condition))) {
+            execute(forStmt.body);
+            if (breakSignal) {
+                breakSignal = false;
+                break;
+            }
+            if (continueSignal) {
+                continueSignal = false;
+            }
+            if (forStmt.increment != null) {
+                evaluate(forStmt.increment);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print printStmt) {
         Object value = evaluate(printStmt.expression);
         System.out.println(stringify(value));
@@ -296,6 +323,13 @@ class Interpreter implements    Expr.Visitor<Object>,
             throw new RuntimeError(operator, "Operands must be numbers.");
         }
     }
+
+//    private Interpreter.InterpretError error(Token token, String message) {
+//        // Lox.error(token, message);
+//        String line = source.split("\n")[token.line];
+//        Lox.error(token.line, token.column, line, message);
+//        return new Interpreter.InterpretError();
+//    }
 
     /**
      * If null      -> "nil";

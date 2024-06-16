@@ -182,30 +182,51 @@ public class Parser {
      */
     private Stmt forStatement() {
         consume(LEFT_PAREN, "Expect '(' after for.");
-        Stmt initializer;
+        Stmt initializer = null;
         Expr condition = null;
         Expr increment = null;
-        Stmt body;
-        if (match(VAR)) {
-            initializer = varDeclaration();
-        }
-        else {
-            initializer = expressionStatement();
-        }
+        Stmt body = null;
 
-        if (peek().type != RIGHT_PAREN) {
-            condition = expression();
-            consume(SEMICOLON, "Expect ';' after condition.");
-            if (peek().type != RIGHT_PAREN) {
-                increment = expression();
+        // all components could be null (if all are null, it's a dead loop)
+
+        if (peek().type != SEMICOLON) {
+            if (match(VAR)) {
+                initializer = varDeclaration();
+            }
+            else {
+                initializer = expressionStatement();
             }
         }
+        else {
+        consume(SEMICOLON, "Expect ';' after initializer.");
+        }
 
-        consume(RIGHT_PAREN, "Expect ')' at the end of for loop.");
+        if (peek().type != SEMICOLON) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after condition.");
+
+        if (peek().type != RIGHT_PAREN) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ';' after condition.");
+
+//        if (peek().type == SEMICOLON) {
+//            advance();
+//        }
+//        else if (peek().type != RIGHT_PAREN) {
+//            condition = expression();
+//            consume(SEMICOLON, "Expect ';' after condition.");
+//            if (peek().type != RIGHT_PAREN) {
+//                increment = expression();
+//            }
+//        }
+
+//        consume(RIGHT_PAREN, "Expect ')' at the end of for loop.");
 
         body = statement();
 
-        return null;
+        return new Stmt.For(initializer, condition, increment, body);
     }
 
     private Stmt printStatement() {
