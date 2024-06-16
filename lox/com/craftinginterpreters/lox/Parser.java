@@ -149,7 +149,7 @@ public class Parser {
         // We don't need to worry about block as statement is the parent of block.
         // If the statement starts with LEFT_PAREN, then it automatically return new Stmt.Block(block());
         // Recall that Block simply extends Stmt so it still matches the type of thenBranch or elseBranch
-        Stmt thenBranch = statement();;
+        Stmt thenBranch = statement();
         Stmt elseBranch = null;
 
         if (match(ELSE)) {
@@ -178,7 +178,7 @@ public class Parser {
      *                        expression? ";"
      *                        expression? ")"
      *                        statement
-     * @return
+     * @return: Stmt
      */
     private Stmt forStatement() {
         consume(LEFT_PAREN, "Expect '(' after for.");
