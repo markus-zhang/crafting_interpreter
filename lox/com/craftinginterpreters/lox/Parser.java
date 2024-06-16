@@ -18,6 +18,7 @@ import static com.craftinginterpreters.lox.TokenType.*;
                     -> printStmt ;
                     -> ifStmt ;
                     -> whileStmt ;
+                    -> forStmt ;
                     -> breakStmt ;
                     -> continueStmt;
                     -> block ;
@@ -25,6 +26,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
     ifStmt          -> "if" "(" expression ")" statement
                        ("else" statement)?
     whileStmt       -> "while" "(" expression ")" statement
+    forStmt         -> "for" "(" (varDecl | assignment | ";")
+                       expression? ";"
+                       expression? ")"
+                       statement
     printStmt       -> "print" expression ";" ;
     breakStmt       -> "break" ";" ;
     continueStmt    -> "continue" ";" ;
@@ -106,6 +111,9 @@ public class Parser {
         else if (match(WHILE)) {
             return whileStatement();
         }
+        else if (match(FOR)) {
+            return forStatement();
+        }
         else if (match(BREAK)) {
             return breakStatement();
         }
@@ -141,7 +149,7 @@ public class Parser {
         // We don't need to worry about block as statement is the parent of block.
         // If the statement starts with LEFT_PAREN, then it automatically return new Stmt.Block(block());
         // Recall that Block simply extends Stmt so it still matches the type of thenBranch or elseBranch
-        Stmt thenBranch = statement();;
+        Stmt thenBranch = statement();
         Stmt elseBranch = null;
 
         if (match(ELSE)) {
@@ -163,6 +171,62 @@ public class Parser {
         Stmt body = statement();
 
         return new Stmt.While(condition, body);
+    }
+
+    /**
+     * forStmt         -> "for" "(" (varDecl | exprStmt | ";")
+     *                        expression? ";"
+     *                        expression? ")"
+     *                        statement
+     * @return: Stmt
+     */
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after for.");
+        Stmt initializer = null;
+        Expr condition = null;
+        Expr increment = null;
+        Stmt body = null;
+
+        // all components could be null (if all are null, it's a dead loop)
+
+        if (peek().type != SEMICOLON) {
+            if (match(VAR)) {
+                initializer = varDeclaration();
+            }
+            else {
+                initializer = expressionStatement();
+            }
+        }
+        else {
+        consume(SEMICOLON, "Expect ';' after initializer.");
+        }
+
+        if (peek().type != SEMICOLON) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after condition.");
+
+        if (peek().type != RIGHT_PAREN) {
+            increment = expression();
+        }
+        consume(RIGHT_PAREN, "Expect ';' after condition.");
+
+//        if (peek().type == SEMICOLON) {
+//            advance();
+//        }
+//        else if (peek().type != RIGHT_PAREN) {
+//            condition = expression();
+//            consume(SEMICOLON, "Expect ';' after condition.");
+//            if (peek().type != RIGHT_PAREN) {
+//                increment = expression();
+//            }
+//        }
+
+//        consume(RIGHT_PAREN, "Expect ')' at the end of for loop.");
+
+        body = statement();
+
+        return new Stmt.For(initializer, condition, increment, body);
     }
 
     private Stmt printStatement() {

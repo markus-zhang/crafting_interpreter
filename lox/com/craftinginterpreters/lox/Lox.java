@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Lox {
-    private static final Interpreter interpreter = new Interpreter();
+    private static Interpreter interpreter = null;
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
     private static String sourceCode = "";
@@ -65,18 +65,18 @@ public class Lox {
         }
     }
 
+    /** If we are in REPL mode, we should notify the parser so that it can also parse expressions.
+     Right now we only allow a single line of code in REPL as we use readLine()
+     We need to switch to other reading methods if we want to allow very flexible REPL, such as detecting whether we should execute or simply move to next line when user clicks "Enter"
+     */
     private static void run(String source) {
         sourceCode = source;
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         System.out.println("Tokenizer completes its running.");
 
-        /** If we are in REPL mode, we should notify the parser so that it can also parse expressions.
-         Right now we only allow a single line of code in REPL as we use readLine()
-         We need to switch to other reading methods if we want to allow very flexible REPL, such as detecting whether we should execute or simply move to next line when user clicks "Enter"
-         */
-
         Parser parser = new Parser(tokens, sourceCode);
+        interpreter = new Interpreter(sourceCode);
 
         if (!repl) {
             List<Stmt> statements = parser.parse();
@@ -97,6 +97,7 @@ public class Lox {
                 if (hadError) {
                     return;
                 }
+                System.out.println("Parser completes its running.");
 
                 interpreter.interpret(statements);
 
@@ -107,6 +108,7 @@ public class Lox {
                 if (hadError) {
                     return;
                 }
+                System.out.println("Parser completes its running.");
 
                 interpreter.interpret(expr);
 
@@ -133,13 +135,15 @@ public class Lox {
         }
     }
 
-    static void runtimeError(RuntimeError error) {
-        /**
-         * interpret() in the Interpreter class catches a RuntimeError, but we deal it in the Lox class
-         */
-        System.err.println(error.getMessage());
-        System.err.println("[line " + error.token.line + "]");
-        System.err.println("[column " + error.token.column + "]");
+    /**
+     * interpret() in the Interpreter class catches a RuntimeError, but we deal it in the Lox class
+     */
+    static void runtimeError(RuntimeError err) {
+        String line = sourceCode.split("\n")[err.token.line];
+        // System.err.println(err.getMessage());
+        System.err.println("[line " + err.token.line + "]");
+        System.err.println("[column " + err.token.column + "]");
+        report(err.token.line, err.token.column, line, "", err.getMessage());
         hadRuntimeError = true;
     }
 

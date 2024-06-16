@@ -1,0 +1,16 @@
+var a = 0;
+var b = 0;
+
+for (var a = 0; a < 5; a = a + 1) {
+  for (var b = 0; b < 5; b = b + 1) {
+    if (b == 3) {
+      print "Continuing inner loop";
+      continue;
+    } else if (b == 4) {
+      print "Breaking inner loop";
+      break;
+    } else {
+      print "a: " + a + ", b: " + b;
+    }
+  }
+}
