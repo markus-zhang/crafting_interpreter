@@ -13,11 +13,17 @@ class Interpreter implements    Expr.Visitor<Object>,
     private boolean continueSignal = false;
 
     // Adding an environment for IDENTIFIERs
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+    private Environment environment = globals;
 
     Interpreter(String source) {
+        globals.define("clock", new LoxCallable() {
+
+            }
+        )
         this.source = source;
     }
+
     /**
      * We need to implement the visitXExpr functions;
      * Each function returns a Java Object as Lox is dynamically typed,
