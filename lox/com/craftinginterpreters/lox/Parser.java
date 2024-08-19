@@ -52,7 +52,10 @@ import static com.craftinginterpreters.lox.TokenType.*;
     factor          -> unary ("*" unary)* ;
     factor          -> unary ("/" unary)* ;
     unary           -> ("!" | "-") unary ;
-    unary           -> primary;
+    unary           -> call ;
+    // call is of higher precedence than unary, and note that it can be a primary
+    call            -> primary ( "(" arguments? ")" )* ;
+    arguments       -> expressions ( "," expressions )* ;
     primary         -> NUMBER | STRING | "true" | "false" | "nil" | "(" expression ") | IDENTIFIER";
 */
 public class Parser {
@@ -379,14 +382,25 @@ public class Parser {
 
     private Expr unary() {
         // unary           -> ("!" | "-") unary ;
-        // unary           -> primary;
+        // unary           -> call;
         if (match(BANG, MINUS)) {
             Token operator = previous();
             Expr right = unary();
             return new Expr.Unary(operator, right);
         }
         else {
-            return primary();
+            return call();
+        }
+    }
+
+    private Expr call() {
+        // call            -> primary ( "(" arguments? ")" )* ;
+        List<Expr> arguments = new ArrayList<>();
+
+        while (true) {
+            if (match(LEFT_PAREN)) {
+
+            }
         }
     }
 
